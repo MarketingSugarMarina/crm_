@@ -291,7 +291,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// GLOBAL SEARCH
+// GLOBAL SEARCH (topbar → sync to contacts filter)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let searchDebounce;
@@ -308,17 +308,23 @@ function handleSearch() {
 // ██  CONTACTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// cache ข้อมูลทั้งหมดจาก API — filter ทำ client-side เพื่อ real-time
+let _allContacts = [];
+
 // ─── loadContacts() — GET /api/contacts แล้ว render ตาราง ────────────────────
 async function loadContacts() {
   document.getElementById('contacts-tbody').innerHTML = loadingRow(7);
   try {
-    const res  = await fetch(`${API}/contacts`);
-    const data = await res.json();
-    renderContacts(data);
-    // อัปเดต sidebar badge
+    const res    = await fetch(`${API}/contacts`);
+    _allContacts = await res.json();
+
+    // reset filter แล้ว render
+    _applyFilter();
+
+    // อัปเดต sidebar badge (ใช้ total จริง ไม่ใช่ filtered)
     const badgeEl = document.getElementById('badge-contacts');
-    badgeEl.textContent = data.length;
-    badgeEl.classList.toggle('hidden', data.length === 0);
+    badgeEl.textContent = _allContacts.length;
+    badgeEl.classList.toggle('hidden', _allContacts.length === 0);
   } catch {
     document.getElementById('contacts-tbody').innerHTML = emptyRow(7, '⚠️', 'โหลดข้อมูลไม่สำเร็จ');
   }
@@ -342,62 +348,145 @@ async function loadStats() {
   }
 }
 
-// ─── filterContacts() — กรองตาม status + keyword ─────────────────────────────
-async function filterContacts() {
-  const status = document.getElementById('filter-status')?.value  || '';
-  const search = document.getElementById('filter-search')?.value.trim() || '';
-
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  if (status) params.set('status', status);
-  const query = params.toString() ? `?${params}` : '';
-
-  document.getElementById('contacts-tbody').innerHTML = loadingRow(7);
-
-  try {
-    const res  = await fetch(`${API}/contacts${query}`);
-    const data = await res.json();
-    renderContacts(data);
-  } catch {
-    document.getElementById('contacts-tbody').innerHTML = emptyRow(7, '⚠️', 'โหลดข้อมูลไม่สำเร็จ');
-  }
+// ─── filterContacts() — Real-time filter พร้อม debounce 300ms ────────────────
+// เรียกจาก oninput (search) และ onchange (status)
+// ถ้าเรียกจาก search input จะมี debounce / status dropdown เรียกตรงๆ
+let _filterDebounce;
+function filterContacts(immediate = false) {
+  clearTimeout(_filterDebounce);
+  const delay = immediate ? 0 : 300;
+  _filterDebounce = setTimeout(_applyFilter, delay);
 }
 
-// ─── renderContacts() — render rows ──────────────────────────────────────────
-function renderContacts(contacts) {
-  const count = document.getElementById('contacts-count');
-  if (count) count.textContent = `${contacts.length} รายการ`;
+// ─── _applyFilter() — ตัว filter จริง (client-side) ──────────────────────────
+function _applyFilter() {
+  const keyword = (document.getElementById('filter-search')?.value || '').trim();
+  const status  = document.getElementById('filter-status')?.value || '';
+  const q       = keyword.toLowerCase();
 
+  // ── กรองข้อมูลจาก cache ──
+  const filtered = _allContacts.filter(c => {
+    // 1. filter status
+    if (status && c.status !== status) return false;
+
+    // 2. filter keyword — ค้นใน name, company, email, phone (case-insensitive)
+    if (q) {
+      const haystack = [c.name, c.company, c.email, c.phone]
+        .map(v => (v || '').toLowerCase())
+        .join(' ');
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // ── อัปเดต UI ──
+  _updateFilterUI(keyword, status, filtered.length, _allContacts.length);
+  renderContacts(filtered, keyword);
+}
+
+// ─── _updateFilterUI() — อัปเดต count label + clear button ──────────────────
+function _updateFilterUI(keyword, status, shown, total) {
+  // count text: "แสดง X จาก Y รายการ" หรือ "X รายการ" ถ้าไม่มี filter
+  const countEl = document.getElementById('contacts-count');
+  const isFiltered = keyword || status;
+  if (countEl) {
+    countEl.textContent = isFiltered
+      ? `แสดง ${shown} จาก ${total} รายการ`
+      : `${total} รายการ`;
+    countEl.className = isFiltered
+      ? 'text-xs font-medium whitespace-nowrap text-blue-400'
+      : 'text-xs font-medium whitespace-nowrap text-gray-500';
+  }
+
+  // section subtitle
   const label = document.getElementById('contacts-count-label');
-  if (label) label.textContent = `(${contacts.length} รายการ)`;
+  if (label) label.textContent = `(${total} รายการ)`;
 
+  // แสดง/ซ่อน ปุ่ม X บน search box
+  const clearSearchBtn = document.getElementById('clear-search-btn');
+  if (clearSearchBtn) clearSearchBtn.classList.toggle('hidden', !keyword);
+
+  // แสดง/ซ่อน ปุ่ม "ล้างตัวกรอง"
+  const clearAllBtn = document.getElementById('clear-all-btn');
+  if (clearAllBtn) clearAllBtn.classList.toggle('hidden', !isFiltered);
+}
+
+// ─── clearSearch() — ล้าง keyword เดียว ──────────────────────────────────────
+function clearSearch() {
+  const input = document.getElementById('filter-search');
+  if (input) input.value = '';
+  _applyFilter();
+  input?.focus();
+}
+
+// ─── clearAllFilters() — ล้าง filter ทั้งหมด ─────────────────────────────────
+function clearAllFilters() {
+  const search = document.getElementById('filter-search');
+  const status = document.getElementById('filter-status');
+  if (search) search.value = '';
+  if (status) status.value = '';
+  _applyFilter();
+}
+
+// ─── highlight() — wrap keyword matches ด้วย <mark> ─────────────────────────
+// ใช้หลังจาก esc() เสมอ เพื่อป้องกัน XSS
+function highlight(text, keyword) {
+  if (!keyword || !text) return text;
+  // escape regex special chars ใน keyword
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(
+    new RegExp(escaped, 'gi'),
+    match => `<mark class="hl">${match}</mark>`
+  );
+}
+
+// ─── renderContacts() — render rows พร้อม highlight ─────────────────────────
+// keyword: คำค้นหาปัจจุบัน (ใช้ highlight)
+function renderContacts(contacts, keyword = '') {
   const tbody = document.getElementById('contacts-tbody');
+
   if (!contacts.length) {
-    tbody.innerHTML = emptyRow(7, '👤', 'ไม่พบ contact');
+    const msg = keyword
+      ? `ไม่พบข้อมูลที่ค้นหา "<strong class="text-gray-400">${esc(keyword)}</strong>"`
+      : 'ยังไม่มี contact';
+    tbody.innerHTML = `<tr><td colspan="7" class="px-5 py-14 text-center">
+      <div class="flex flex-col items-center gap-3 text-gray-600">
+        <span class="text-4xl">${keyword ? '🔍' : '👤'}</span>
+        <span class="text-sm">${msg}</span>
+        ${keyword ? `<button onclick="clearAllFilters()"
+          class="text-xs text-blue-400 hover:text-blue-300 mt-1 transition">
+          ล้างการค้นหา
+        </button>` : ''}
+      </div>
+    </td></tr>`;
     return;
   }
+
+  // helper: esc แล้ว highlight
+  const h = (val) => highlight(esc(val || '—'), keyword);
 
   tbody.innerHTML = contacts.map(c => `
     <tr class="border-b border-navy-700/50 hover:bg-navy-700/30 transition group">
       <td class="px-5 py-3.5">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-navy-600 text-xs font-bold text-white
-                      flex items-center justify-center flex-shrink-0">
+                      flex items-center justify-center flex-shrink-0 flex-shrink-0">
             ${esc(initials(c.name))}
           </div>
-          <span class="text-sm font-semibold text-gray-200">${esc(c.name)}</span>
+          <span class="text-sm font-semibold text-gray-200">${h(c.name)}</span>
         </div>
       </td>
       <td class="px-4 py-3.5 text-sm text-gray-400 max-w-[140px] truncate">
-        ${esc(c.company || '—')}
+        ${h(c.company)}
       </td>
-      <td class="px-4 py-3.5 text-sm text-gray-400">${esc(c.email || '—')}</td>
-      <td class="px-4 py-3.5 text-sm text-gray-400 whitespace-nowrap">${esc(c.phone || '—')}</td>
+      <td class="px-4 py-3.5 text-sm text-gray-400">${h(c.email)}</td>
+      <td class="px-4 py-3.5 text-sm text-gray-400 whitespace-nowrap">${h(c.phone)}</td>
       <td class="px-4 py-3.5">${badge(c.status, STATUS_BADGE)}</td>
-      <td class="px-4 py-3.5 text-xs text-gray-600 max-w-[120px] truncate">${esc(c.tags || '—')}</td>
+      <td class="px-4 py-3.5 text-xs text-gray-600 max-w-[120px] truncate">
+        ${esc(c.tags || '—')}
+      </td>
       <td class="px-4 py-3.5">
         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-          <!-- Edit button -->
           <button onclick="openEditModal(${c.id})"
             class="p-1.5 rounded-lg text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition"
             title="แก้ไข">
@@ -406,7 +495,6 @@ function renderContacts(contacts) {
                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
             </svg>
           </button>
-          <!-- Delete button -->
           <button onclick="deleteContact(${c.id})"
             class="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition"
             title="ลบ">

@@ -79,6 +79,21 @@
       border-color: #f87171 !important;
       box-shadow: 0 0 0 3px rgba(248,113,113,0.15) !important;
     }
+
+    /* Search highlight */
+    mark.hl {
+      background: rgba(250, 204, 21, 0.25);
+      color: #fde047;
+      border-radius: 3px;
+      padding: 0 2px;
+      font-weight: 600;
+    }
+
+    /* Search box focus glow */
+    #search-box:focus-within {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    }
   </style>
 </head>
 
@@ -367,7 +382,7 @@
 
         <div class="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-navy-700">
           <!-- Status dropdown -->
-          <select id="filter-status" onchange="filterContacts()"
+          <select id="filter-status" onchange="filterContacts(true)"
             class="bg-navy-900 border border-navy-600 text-gray-300 text-xs
                    font-semibold rounded-lg px-3 py-1.5
                    focus:outline-none focus:border-blue-500">
@@ -378,24 +393,42 @@
             <option value="inactive">Inactive</option>
           </select>
 
-          <!-- Search -->
-          <div class="flex items-center gap-2 bg-navy-900 border border-navy-600
-                      rounded-lg px-3 py-1.5 flex-1 min-w-[160px] max-w-xs">
+          <!-- Search box -->
+          <div id="search-box"
+            class="flex items-center gap-2 bg-navy-900 border border-navy-600
+                   rounded-lg px-3 py-1.5 flex-1 min-w-[180px] max-w-sm transition">
             <svg class="w-3.5 h-3.5 text-gray-600 flex-shrink-0" fill="none"
                  stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-            <input id="filter-search" type="text" placeholder="ค้นหาชื่อ, บริษัท, email..."
+            <input id="filter-search" type="text"
+              placeholder="ค้นหาชื่อ, บริษัท, อีเมล, เบอร์..."
               oninput="filterContacts()"
               class="bg-transparent text-xs text-gray-300 placeholder-gray-600
                      outline-none w-full" />
+            <!-- ปุ่ม X ล้าง search -->
+            <button id="clear-search-btn" onclick="clearSearch()"
+              class="text-gray-600 hover:text-white transition hidden flex-shrink-0"
+              title="ล้างการค้นหา">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
           </div>
 
-          <!-- Count -->
-          <span id="contacts-count"
-            class="ml-auto text-xs text-gray-500 font-medium whitespace-nowrap">
-          </span>
+          <!-- Result count + Clear all -->
+          <div class="ml-auto flex items-center gap-3">
+            <span id="contacts-count"
+              class="text-xs text-gray-500 font-medium whitespace-nowrap">
+            </span>
+            <button id="clear-all-btn" onclick="clearAllFilters()"
+              class="hidden text-xs text-blue-400 hover:text-blue-300 font-semibold
+                     px-2 py-1 rounded-lg hover:bg-blue-500/10 transition whitespace-nowrap">
+              ล้างตัวกรอง
+            </button>
+          </div>
         </div>
 
         <!-- Table -->
