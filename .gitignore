@@ -1,0 +1,17 @@
+# Node modules - ไม่ต้อง commit โฟลเดอร์นี้
+node_modules/
+
+# Environment variables - เก็บข้อมูล sensitive เช่น password DB
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/

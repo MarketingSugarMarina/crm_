@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRM — NavyCRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── CSS Variables (Navy Palette) ─────────────────────────────────────── */
+    :root {
+      --navy-900: #0b1e38;   /* sidebar bg */
+      --navy-800: #112a4a;   /* sidebar hover */
+      --navy-700: #1a3a63;   /* sidebar active */
+      --navy-600: #1e4d82;   /* border accent */
+      --navy-400: #4a7fb5;   /* muted text on dark */
+      --navy-100: #dde8f5;   /* light tint */
+      --accent:   #3b82f6;   /* bright blue CTA */
+      --accent-h: #2563eb;   /* CTA hover */
+      --teal:     #0ea5e9;   /* highlight / pipeline */
+      --bg:       #f0f4f9;   /* page background */
+      --surface:  #ffffff;   /* card background */
+      --border:   #e2eaf3;
+      --text:     #1e2d40;
+      --muted:    #64748b;
+      --red:      #ef4444;
+      --green:    #22c55e;
+      --amber:    #f59e0b;
+    }
+
+    /* ─── Reset ─────────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       SIDEBAR
+    ══════════════════════════════════════════════════════════════════════════ */
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: var(--navy-900);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+
+    /* Logo area */
+    .sidebar-logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar-logo .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .sidebar-logo .logo-text {
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .sidebar-logo .logo-sub {
+      color: var(--navy-400);
+      font-size: 0.7rem;
+      margin-top: 1px;
+    }
+
+    /* Nav items */
+    .sidebar-nav {
+      padding: 16px 12px;
+      flex: 1;
+    }
+    .sidebar-nav .nav-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--navy-400);
+      padding: 8px 8px 6px;
+      font-weight: 600;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #b8cde5;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+      margin-bottom: 2px;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-item:hover { background: var(--navy-800); color: #fff; }
+    .nav-item.active { background: var(--navy-700); color: #fff; }
+    .nav-item .nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-item .nav-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    /* Sidebar footer */
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .sidebar-footer .version {
+      color: var(--navy-400);
+      font-size: 0.7rem;
+      text-align: center;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MAIN LAYOUT
+    ══════════════════════════════════════════════════════════════════════════ */
+    .main-wrap {
+      margin-left: 240px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Top bar */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .topbar-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      gap: 8px;
+      width: 220px;
+    }
+    .search-box input {
+      border: none;
+      background: none;
+      outline: none;
+      font-size: 0.85rem;
+      color: var(--text);
+      width: 100%;
+    }
+    .search-box .search-icon { color: var(--muted); font-size: 0.9rem; }
+
+    /* Page content */
+    .page-content {
+      padding: 28px;
+      flex: 1;
+    }
+
+    /* ─── Panels ─────────────────────────────────────────────────────────────── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ─── Stat Cards Row ─────────────────────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .stat-icon {
+      width: 46px; height: 46px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .stat-icon.blue   { background: #dbeafe; }
+    .stat-icon.green  { background: #dcfce7; }
+    .stat-icon.amber  { background: #fef9c3; }
+    .stat-icon.purple { background: #ede9fe; }
+    .stat-icon.teal   { background: #e0f2fe; }
+    .stat-info .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .stat-info .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ─── Section Header ─────────────────────────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ─── Card ───────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-header h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .card-body { padding: 20px; }
+
+    /* ─── Form ───────────────────────────────────────────────────────────────── */
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    }
+
+    /* ─── Buttons ────────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--accent);   color: #fff; }
+    .btn-primary:hover { background: var(--accent-h); }
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
+    }
+    .btn-outline:hover { background: #eff6ff; }
+    .btn-danger  { background: #fee2e2; color: #dc2626; }
+    .btn-danger:hover  { background: #fecaca; }
+    .btn-sm { padding: 5px 12px; font-size: 0.78rem; border-radius: 6px; }
+
+    /* ─── Table ──────────────────────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1.5px solid var(--border); }
+    th {
+      text-align: left;
+      padding: 11px 16px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    td {
+      padding: 13px 16px;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #f8fafc; }
+
+    /* Avatar initial */
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--navy-700);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-right: 10px;
+    }
+    .name-cell { display: flex; align-items: center; }
+    .name-cell .name-primary { font-weight: 600; color: var(--text); }
+    .name-cell .name-sub { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+
+    /* ─── Badges ─────────────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.7; }
+
+    /* Contact status */
+    .badge-lead       { background: #eff6ff; color: #2563eb; }
+    .badge-prospect   { background: #f0fdf4; color: #16a34a; }
+    .badge-customer   { background: #f0f9ff; color: #0369a1; }
+    .badge-inactive   { background: #f8fafc; color: #64748b; }
+
+    /* Deal stage */
+    .badge-new         { background: #f1f5f9; color: #475569; }
+    .badge-contacted   { background: #eff6ff; color: #2563eb; }
+    .badge-proposal    { background: #fefce8; color: #a16207; }
+    .badge-negotiation { background: #fff7ed; color: #c2410c; }
+    .badge-won         { background: #f0fdf4; color: #15803d; }
+    .badge-lost        { background: #fef2f2; color: #dc2626; }
+
+    /* ─── Pipeline Bar ───────────────────────────────────────────────────────── */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      padding: 20px;
+    }
+    .pipeline-stage {
+      text-align: center;
+      padding: 16px 8px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      position: relative;
+    }
+    .pipeline-stage.won   { border-color: #86efac; background: #f0fdf4; }
+    .pipeline-stage.lost  { border-color: #fca5a5; background: #fef2f2; }
+    .pipeline-stage .ps-count {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .pipeline-stage .ps-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .pipeline-stage .ps-value {
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* ─── Empty / Loading state ──────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+    }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 8px; }
+    .empty-state p { font-size: 0.875rem; }
+
+    /* ─── Toast ──────────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      background: var(--navy-900);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ─── Filter bar ─────────────────────────────────────────────────────────── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ─── Responsive ─────────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .pipeline-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 680px) {
+      .sidebar { width: 64px; }
+      .sidebar-logo .logo-text, .sidebar-logo .logo-sub,
+      .nav-item span.nav-label-text, .nav-item .nav-badge,
+      .sidebar-nav .nav-label, .sidebar-footer { display: none; }
+      .main-wrap { margin-left: 64px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════ SIDEBAR ═══════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">📊</div>
+      <div>
+        <div class="logo-text">NavyCRM</div>
+        <div class="logo-sub">v2.0</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main</div>
+
+      <button class="nav-item active" id="nav-contacts" onclick="showPanel('contacts', this)">
+        <span class="nav-icon">👥</span>
+        <span class="nav-label-text">Contacts</span>
+        <span class="nav-badge" id="badge-contacts">—</span>
+      </button>
+
+      <button class="nav-item" id="nav-deals" onclick="showPanel('deals', this)">
+        <span class="nav-icon">💼</span>
+        <span class="nav-label-text">Deals</span>
+        <span class="nav-badge" id="badge-deals">—</span>
+      </button>
+
+      <div class="nav-label" style="margin-top:12px">Settings</div>
+      <button class="nav-item" style="opacity:0.5;cursor:not-allowed">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label-text">Settings</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="version">NavyCRM © 2026</div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════ MAIN ═══════════════ -->
+  <div class="main-wrap">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="topbar-title" id="topbar-title">Contacts</div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input id="global-search" placeholder="ค้นหา..." oninput="handleSearch()" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <div class="page-content">
+
+      <!-- ════════ CONTACTS PANEL ════════ -->
+      <div id="panel-contacts" class="panel active">
+
+        <!-- Stat Cards -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon blue">👥</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-total">—</div>
+              <div class="stat-label">Total Contacts</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon teal">🌱</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-lead">—</div>
+              <div class="stat-label">Lead</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber">🔍</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-prospect">—</div>
+              <div class="stat-label">Prospect</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-customer">—</div>
+              <div class="stat-label">Customer</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Contact Form -->
+        <div class="card">
+          <div class="card-header">
+            <h3>เพิ่ม Contact ใหม่</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label>ชื่อ *</label>
+                <input type="text" id="c-name" placeholder="ชื่อ-นามสกุล" />
+              </div>
+              <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="c-email" placeholder="email@example.com" />
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="text" id="c-phone" placeholder="08x-xxx-xxxx" />
+              </div>
+              <div class="form-group">
+                <label>Company</label>
+                <input type="text" id="c-company" placeholder="บริษัท..." />
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select id="c-status">
+                  <option value="lead">Lead</option>
+                  <option value="prospect">Prospect</option>
+                  <option value="customer">Customer</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="createContact()">＋ Add Contact</button>
+          </div>
+        </div>
+
+        <!-- Contacts Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3>รายชื่อ Contacts</h3>
+          </div>
+          <!-- Filter chips -->
+          <div class="filter-bar">
+            <span class="filter-chip active" onclick="filterContacts('', this)">All</span>
+            <span class="filter-chip" onclick="filterContacts('lead', this)">Lead</span>
+            <span class="filter-chip" onclick="filterContacts('prospect', this)">Prospect</span>
+            <span class="filter-chip" onclick="filterContacts('customer', this)">Customer</span>
+            <span class="filter-chip" onclick="filterContacts('inactive', this)">Inactive</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Contact</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th>Tags</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="contacts-tbody">
+                <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ DEALS PANEL ════════ -->
+      <div id="panel-deals" class="panel">
+
+        <!-- Pipeline summary -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <h3>Sales Pipeline</h3>
+            <span id="pipeline-total" style="font-size:0.85rem;color:var(--accent);font-weight:600"></span>
+          </div>
+          <div class="pipeline-grid" id="pipeline-grid">
+            <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted)">Loading pipeline...</div>
+          </div>
+        </div>
+
+        <!-- Add Deal Form -->
+        <div class="card">
+          <div class="card-header">
+            <h3>เพิ่ม Deal ใหม่</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Deal Title *</label>
+                <input type="text" id="d-title" placeholder="ชื่อ deal..." />
+              </div>
+              <div class="form-group">
+                <label>มูลค่า (THB)</label>
+                <input type="number" id="d-value" placeholder="0" />
+              </div>
+              <div class="form-group">
+                <label>Stage</label>
+                <select id="d-stage">
+                  <option value="new">New</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="proposal">Proposal</option>
+                  <option value="negotiation">Negotiation</option>
+                  <option value="won">Won</option>
+                  <option value="lost">Lost</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Contact</label>
+                <select id="d-contact"><option value="">— เลือก contact —</option></select>
+              </div>
+              <div class="form-group">
+                <label>Close Date</label>
+                <input type="date" id="d-close-date" />
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="createDeal()">＋ Add Deal</button>
+          </div>
+        </div>
+
+        <!-- Deals Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3>รายการ Deals</h3>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Deal</th>
+                  <th>มูลค่า</th>
+                  <th>Stage</th>
+                  <th>Contact</th>
+                  <th>Close Date</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="deals-tbody">
+                <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+      <!-- end panel-deals -->
+
+    </div><!-- end page-content -->
+  </div><!-- end main-wrap -->
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
