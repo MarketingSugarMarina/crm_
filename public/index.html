@@ -1,761 +1,638 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CRM — NavyCRM</title>
+  <title>MyCRM</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              950: '#060d1a',
+              900: '#0b1628',
+              800: '#102035',
+              700: '#162b48',
+              600: '#1e3a5f',
+              500: '#2a5080',
+              400: '#4a7fb5',
+              300: '#7aafd4',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
   <style>
-    /* ─── CSS Variables (Navy Palette) ─────────────────────────────────────── */
-    :root {
-      --navy-900: #0b1e38;   /* sidebar bg */
-      --navy-800: #112a4a;   /* sidebar hover */
-      --navy-700: #1a3a63;   /* sidebar active */
-      --navy-600: #1e4d82;   /* border accent */
-      --navy-400: #4a7fb5;   /* muted text on dark */
-      --navy-100: #dde8f5;   /* light tint */
-      --accent:   #3b82f6;   /* bright blue CTA */
-      --accent-h: #2563eb;   /* CTA hover */
-      --teal:     #0ea5e9;   /* highlight / pipeline */
-      --bg:       #f0f4f9;   /* page background */
-      --surface:  #ffffff;   /* card background */
-      --border:   #e2eaf3;
-      --text:     #1e2d40;
-      --muted:    #64748b;
-      --red:      #ef4444;
-      --green:    #22c55e;
-      --amber:    #f59e0b;
-    }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a5080; border-radius: 99px; }
 
-    /* ─── Reset ─────────────────────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      min-height: 100vh;
-    }
+    /* Transitions */
+    .nav-item { transition: background 0.15s, color 0.15s; }
+    .stat-card { transition: transform 0.15s, box-shadow 0.15s; }
+    .stat-card:hover { transform: translateY(-2px); }
 
-    /* ═══════════════════════════════════════════════════════════════════════════
-       SIDEBAR
-    ══════════════════════════════════════════════════════════════════════════ */
-    .sidebar {
-      width: 240px;
-      min-height: 100vh;
-      background: var(--navy-900);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      position: fixed;
-      top: 0; left: 0; bottom: 0;
-      z-index: 100;
-    }
-
-    /* Logo area */
-    .sidebar-logo {
-      padding: 24px 20px 20px;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .sidebar-logo .logo-icon {
-      width: 36px; height: 36px;
-      background: var(--accent);
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem;
-      flex-shrink: 0;
-    }
-    .sidebar-logo .logo-text {
-      color: #fff;
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-    }
-    .sidebar-logo .logo-sub {
-      color: var(--navy-400);
-      font-size: 0.7rem;
-      margin-top: 1px;
-    }
-
-    /* Nav items */
-    .sidebar-nav {
-      padding: 16px 12px;
-      flex: 1;
-    }
-    .sidebar-nav .nav-label {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--navy-400);
-      padding: 8px 8px 6px;
-      font-weight: 600;
-    }
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      color: #b8cde5;
-      cursor: pointer;
-      font-size: 0.875rem;
-      font-weight: 500;
-      transition: background 0.15s, color 0.15s;
-      margin-bottom: 2px;
-      border: none;
-      background: none;
-      width: 100%;
-      text-align: left;
-    }
-    .nav-item:hover { background: var(--navy-800); color: #fff; }
-    .nav-item.active { background: var(--navy-700); color: #fff; }
-    .nav-item .nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
-    .nav-item .nav-badge {
-      margin-left: auto;
-      background: var(--accent);
-      color: #fff;
-      font-size: 0.65rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 999px;
-      min-width: 20px;
-      text-align: center;
-    }
-
-    /* Sidebar footer */
-    .sidebar-footer {
-      padding: 16px;
-      border-top: 1px solid rgba(255,255,255,0.07);
-    }
-    .sidebar-footer .version {
-      color: var(--navy-400);
-      font-size: 0.7rem;
-      text-align: center;
-    }
-
-    /* ═══════════════════════════════════════════════════════════════════════════
-       MAIN LAYOUT
-    ══════════════════════════════════════════════════════════════════════════ */
-    .main-wrap {
-      margin-left: 240px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    /* Top bar */
-    .topbar {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 28px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
-    .topbar-title {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .search-box {
-      display: flex;
-      align-items: center;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 12px;
-      gap: 8px;
-      width: 220px;
-    }
-    .search-box input {
-      border: none;
-      background: none;
-      outline: none;
-      font-size: 0.85rem;
-      color: var(--text);
-      width: 100%;
-    }
-    .search-box .search-icon { color: var(--muted); font-size: 0.9rem; }
-
-    /* Page content */
-    .page-content {
-      padding: 28px;
-      flex: 1;
-    }
-
-    /* ─── Panels ─────────────────────────────────────────────────────────────── */
-    .panel { display: none; }
-    .panel.active { display: block; }
-
-    /* ─── Stat Cards Row ─────────────────────────────────────────────────────── */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .stat-card {
-      background: var(--surface);
-      border-radius: 14px;
-      padding: 20px;
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .stat-icon {
-      width: 46px; height: 46px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.3rem;
-      flex-shrink: 0;
-    }
-    .stat-icon.blue   { background: #dbeafe; }
-    .stat-icon.green  { background: #dcfce7; }
-    .stat-icon.amber  { background: #fef9c3; }
-    .stat-icon.purple { background: #ede9fe; }
-    .stat-icon.teal   { background: #e0f2fe; }
-    .stat-info .stat-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1.2;
-    }
-    .stat-info .stat-label {
-      font-size: 0.78rem;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    /* ─── Section Header ─────────────────────────────────────────────────────── */
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-    .section-header h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    /* ─── Card ───────────────────────────────────────────────────────────────── */
-    .card {
-      background: var(--surface);
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      margin-bottom: 20px;
-      overflow: hidden;
-    }
-    .card-header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .card-header h3 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .card-body { padding: 20px; }
-
-    /* ─── Form ───────────────────────────────────────────────────────────────── */
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-    .form-group label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 5px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    input[type="text"],
-    input[type="email"],
-    input[type="number"],
-    input[type="date"],
-    select,
-    textarea {
-      width: 100%;
-      padding: 9px 12px;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.875rem;
-      font-family: inherit;
-      color: var(--text);
-      background: var(--surface);
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-    }
-
-    /* ─── Buttons ────────────────────────────────────────────────────────────── */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 9px 18px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: background 0.15s, transform 0.1s;
-    }
-    .btn:active { transform: scale(0.97); }
-    .btn-primary { background: var(--accent);   color: #fff; }
-    .btn-primary:hover { background: var(--accent-h); }
-    .btn-outline {
-      background: transparent;
-      color: var(--accent);
-      border: 1.5px solid var(--accent);
-    }
-    .btn-outline:hover { background: #eff6ff; }
-    .btn-danger  { background: #fee2e2; color: #dc2626; }
-    .btn-danger:hover  { background: #fecaca; }
-    .btn-sm { padding: 5px 12px; font-size: 0.78rem; border-radius: 6px; }
-
-    /* ─── Table ──────────────────────────────────────────────────────────────── */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    thead tr { border-bottom: 1.5px solid var(--border); }
-    th {
-      text-align: left;
-      padding: 11px 16px;
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-weight: 700;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    td {
-      padding: 13px 16px;
-      font-size: 0.875rem;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
-    tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover td { background: #f8fafc; }
-
-    /* Avatar initial */
-    .avatar {
-      width: 32px; height: 32px;
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: #3b82f6;
       border-radius: 50%;
-      background: var(--navy-700);
-      color: #fff;
-      font-size: 0.75rem;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-right: 10px;
-    }
-    .name-cell { display: flex; align-items: center; }
-    .name-cell .name-primary { font-weight: 600; color: var(--text); }
-    .name-cell .name-sub { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
-
-    /* ─── Badges ─────────────────────────────────────────────────────────────── */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-    .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.7; }
-
-    /* Contact status */
-    .badge-lead       { background: #eff6ff; color: #2563eb; }
-    .badge-prospect   { background: #f0fdf4; color: #16a34a; }
-    .badge-customer   { background: #f0f9ff; color: #0369a1; }
-    .badge-inactive   { background: #f8fafc; color: #64748b; }
-
-    /* Deal stage */
-    .badge-new         { background: #f1f5f9; color: #475569; }
-    .badge-contacted   { background: #eff6ff; color: #2563eb; }
-    .badge-proposal    { background: #fefce8; color: #a16207; }
-    .badge-negotiation { background: #fff7ed; color: #c2410c; }
-    .badge-won         { background: #f0fdf4; color: #15803d; }
-    .badge-lost        { background: #fef2f2; color: #dc2626; }
-
-    /* ─── Pipeline Bar ───────────────────────────────────────────────────────── */
-    .pipeline-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 10px;
-      padding: 20px;
-    }
-    .pipeline-stage {
-      text-align: center;
-      padding: 16px 8px;
-      border-radius: 10px;
-      background: var(--bg);
-      border: 1.5px solid var(--border);
-      position: relative;
-    }
-    .pipeline-stage.won   { border-color: #86efac; background: #f0fdf4; }
-    .pipeline-stage.lost  { border-color: #fca5a5; background: #fef2f2; }
-    .pipeline-stage .ps-count {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .pipeline-stage .ps-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 600;
-      margin-top: 2px;
-    }
-    .pipeline-stage .ps-value {
-      font-size: 0.75rem;
-      color: var(--accent);
-      font-weight: 600;
-      margin-top: 4px;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
     }
 
-    /* ─── Empty / Loading state ──────────────────────────────────────────────── */
-    .empty-state {
-      text-align: center;
-      padding: 48px 20px;
-      color: var(--muted);
-    }
-    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 8px; }
-    .empty-state p { font-size: 0.875rem; }
-
-    /* ─── Toast ──────────────────────────────────────────────────────────────── */
+    /* Toast slide-up */
     #toast {
-      position: fixed;
-      bottom: 28px; right: 28px;
-      background: var(--navy-900);
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-      opacity: 0;
-      transform: translateY(8px);
       transition: opacity 0.25s, transform 0.25s;
-      pointer-events: none;
-      z-index: 999;
+      transform: translateY(8px);
     }
-    #toast.show { opacity: 1; transform: translateY(0); }
-
-    /* ─── Filter bar ─────────────────────────────────────────────────────────── */
-    .filter-bar {
-      display: flex;
-      gap: 8px;
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border);
-      flex-wrap: wrap;
-    }
-    .filter-chip {
-      padding: 5px 14px;
-      border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1.5px solid var(--border);
-      background: var(--surface);
-      color: var(--muted);
-      transition: all 0.15s;
-    }
-    .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
-    .filter-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-    /* ─── Responsive ─────────────────────────────────────────────────────────── */
-    @media (max-width: 900px) {
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
-      .pipeline-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-    @media (max-width: 680px) {
-      .sidebar { width: 64px; }
-      .sidebar-logo .logo-text, .sidebar-logo .logo-sub,
-      .nav-item span.nav-label-text, .nav-item .nav-badge,
-      .sidebar-nav .nav-label, .sidebar-footer { display: none; }
-      .main-wrap { margin-left: 64px; }
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
-    }
+    #toast.show { opacity: 1 !important; transform: translateY(0) !important; }
   </style>
 </head>
-<body>
 
-  <!-- ═══════════════ SIDEBAR ═══════════════ -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon">📊</div>
-      <div>
-        <div class="logo-text">NavyCRM</div>
-        <div class="logo-sub">v2.0</div>
+<body class="bg-navy-950 text-gray-100 font-sans flex h-screen overflow-hidden">
+
+<!-- ══════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════ -->
+<aside id="sidebar"
+  class="w-60 flex-shrink-0 bg-navy-900 flex flex-col h-screen
+         border-r border-navy-700 relative z-20">
+
+  <!-- Logo -->
+  <div class="flex items-center gap-3 px-5 py-5 border-b border-navy-700">
+    <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center
+                text-white font-bold text-sm flex-shrink-0 shadow-lg shadow-blue-900/40">
+      CRM
+    </div>
+    <div>
+      <div class="text-white font-bold text-base leading-tight">MyCRM</div>
+      <div class="text-navy-400 text-xs">Workspace</div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+    <p class="text-navy-400 text-xs font-semibold uppercase tracking-widest px-3 mb-2">
+      Main Menu
+    </p>
+
+    <!-- Dashboard -->
+    <button
+      onclick="showSection('dashboard', this)"
+      class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+             text-sm font-medium text-gray-300 hover:bg-navy-700 hover:text-white
+             bg-navy-700 text-white" id="nav-dashboard">
+      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10-3a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7z"/>
+      </svg>
+      <span>Dashboard</span>
+    </button>
+
+    <!-- Contacts -->
+    <button
+      onclick="showSection('contacts', this)"
+      class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+             text-sm font-medium text-gray-400 hover:bg-navy-700 hover:text-white"
+      id="nav-contacts">
+      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      <span>Contacts</span>
+      <span id="badge-contacts"
+        class="ml-auto bg-blue-600 text-white text-xs font-bold
+               px-2 py-0.5 rounded-full min-w-[20px] text-center hidden">
+        0
+      </span>
+    </button>
+
+    <!-- Deals -->
+    <button
+      onclick="showSection('deals', this)"
+      class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+             text-sm font-medium text-gray-400 hover:bg-navy-700 hover:text-white"
+      id="nav-deals">
+      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      <span>Deals</span>
+      <span id="badge-deals"
+        class="ml-auto bg-blue-600 text-white text-xs font-bold
+               px-2 py-0.5 rounded-full min-w-[20px] text-center hidden">
+        0
+      </span>
+    </button>
+
+    <!-- Divider -->
+    <div class="border-t border-navy-700 my-3"></div>
+    <p class="text-navy-400 text-xs font-semibold uppercase tracking-widest px-3 mb-2">
+      Settings
+    </p>
+
+    <!-- Settings (disabled) -->
+    <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                   text-sm font-medium text-navy-500 cursor-not-allowed opacity-50">
+      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- Sidebar footer -->
+  <div class="px-4 py-4 border-t border-navy-700">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-full bg-blue-700 flex items-center justify-center
+                  text-xs font-bold text-white flex-shrink-0">A</div>
+      <div class="min-w-0">
+        <div class="text-xs font-semibold text-gray-300 truncate">Admin</div>
+        <div class="text-xs text-navy-400">admin@mycrm.co</div>
       </div>
     </div>
+  </div>
+</aside>
 
-    <nav class="sidebar-nav">
-      <div class="nav-label">Main</div>
+<!-- ══════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════ -->
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-      <button class="nav-item active" id="nav-contacts" onclick="showPanel('contacts', this)">
-        <span class="nav-icon">👥</span>
-        <span class="nav-label-text">Contacts</span>
-        <span class="nav-badge" id="badge-contacts">—</span>
+  <!-- Top bar -->
+  <header class="flex-shrink-0 h-14 bg-navy-900 border-b border-navy-700
+                 flex items-center justify-between px-6">
+    <h1 id="topbar-title" class="text-sm font-semibold text-white">Dashboard</h1>
+    <div class="flex items-center gap-3">
+      <!-- Search -->
+      <div class="flex items-center gap-2 bg-navy-800 border border-navy-600
+                  rounded-lg px-3 py-1.5 w-52">
+        <svg class="w-3.5 h-3.5 text-gray-500 flex-shrink-0" fill="none"
+             stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input id="global-search"
+          class="bg-transparent text-sm text-gray-300 placeholder-gray-600
+                 outline-none w-full"
+          placeholder="ค้นหา..."
+          oninput="handleSearch()" />
+      </div>
+      <!-- Refresh -->
+      <button onclick="refreshAll()"
+        class="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-navy-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
       </button>
-
-      <button class="nav-item" id="nav-deals" onclick="showPanel('deals', this)">
-        <span class="nav-icon">💼</span>
-        <span class="nav-label-text">Deals</span>
-        <span class="nav-badge" id="badge-deals">—</span>
-      </button>
-
-      <div class="nav-label" style="margin-top:12px">Settings</div>
-      <button class="nav-item" style="opacity:0.5;cursor:not-allowed">
-        <span class="nav-icon">⚙️</span>
-        <span class="nav-label-text">Settings</span>
-      </button>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="version">NavyCRM © 2026</div>
     </div>
-  </aside>
+  </header>
 
-  <!-- ═══════════════ MAIN ═══════════════ -->
-  <div class="main-wrap">
+  <!-- Scrollable content area -->
+  <main class="flex-1 overflow-y-auto">
 
-    <!-- Top bar -->
-    <header class="topbar">
-      <div class="topbar-title" id="topbar-title">Contacts</div>
-      <div class="topbar-right">
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input id="global-search" placeholder="ค้นหา..." oninput="handleSearch()" />
-        </div>
-      </div>
-    </header>
-
-    <!-- Page content -->
-    <div class="page-content">
-
-      <!-- ════════ CONTACTS PANEL ════════ -->
-      <div id="panel-contacts" class="panel active">
-
-        <!-- Stat Cards -->
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-icon blue">👥</div>
-            <div class="stat-info">
-              <div class="stat-value" id="stat-total">—</div>
-              <div class="stat-label">Total Contacts</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon teal">🌱</div>
-            <div class="stat-info">
-              <div class="stat-value" id="stat-lead">—</div>
-              <div class="stat-label">Lead</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon amber">🔍</div>
-            <div class="stat-info">
-              <div class="stat-value" id="stat-prospect">—</div>
-              <div class="stat-label">Prospect</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green">✅</div>
-            <div class="stat-info">
-              <div class="stat-value" id="stat-customer">—</div>
-              <div class="stat-label">Customer</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Add Contact Form -->
-        <div class="card">
-          <div class="card-header">
-            <h3>เพิ่ม Contact ใหม่</h3>
-          </div>
-          <div class="card-body">
-            <div class="form-row">
-              <div class="form-group">
-                <label>ชื่อ *</label>
-                <input type="text" id="c-name" placeholder="ชื่อ-นามสกุล" />
-              </div>
-              <div class="form-group">
-                <label>Email *</label>
-                <input type="email" id="c-email" placeholder="email@example.com" />
-              </div>
-              <div class="form-group">
-                <label>Phone</label>
-                <input type="text" id="c-phone" placeholder="08x-xxx-xxxx" />
-              </div>
-              <div class="form-group">
-                <label>Company</label>
-                <input type="text" id="c-company" placeholder="บริษัท..." />
-              </div>
-              <div class="form-group">
-                <label>Status</label>
-                <select id="c-status">
-                  <option value="lead">Lead</option>
-                  <option value="prospect">Prospect</option>
-                  <option value="customer">Customer</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-            </div>
-            <button class="btn btn-primary" onclick="createContact()">＋ Add Contact</button>
-          </div>
-        </div>
-
-        <!-- Contacts Table -->
-        <div class="card">
-          <div class="card-header">
-            <h3>รายชื่อ Contacts</h3>
-          </div>
-          <!-- Filter chips -->
-          <div class="filter-bar">
-            <span class="filter-chip active" onclick="filterContacts('', this)">All</span>
-            <span class="filter-chip" onclick="filterContacts('lead', this)">Lead</span>
-            <span class="filter-chip" onclick="filterContacts('prospect', this)">Prospect</span>
-            <span class="filter-chip" onclick="filterContacts('customer', this)">Customer</span>
-            <span class="filter-chip" onclick="filterContacts('inactive', this)">Inactive</span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Contact</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Status</th>
-                  <th>Tags</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="contacts-tbody">
-                <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+    <!-- ════════════════════════════════════
+         SECTION: DASHBOARD
+    ════════════════════════════════════ -->
+    <section id="section-dashboard" class="p-6">
+      <div class="mb-6">
+        <h2 class="text-lg font-bold text-white">ภาพรวม</h2>
+        <p class="text-sm text-gray-500 mt-0.5">สรุปข้อมูล CRM ทั้งหมด</p>
       </div>
 
-      <!-- ════════ DEALS PANEL ════════ -->
-      <div id="panel-deals" class="panel">
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
 
-        <!-- Pipeline summary -->
-        <div class="card" style="margin-bottom:20px">
-          <div class="card-header">
-            <h3>Sales Pipeline</h3>
-            <span id="pipeline-total" style="font-size:0.85rem;color:var(--accent);font-weight:600"></span>
+        <!-- Total Contacts -->
+        <div class="stat-card bg-navy-800 border border-navy-600 rounded-2xl p-5
+                    flex items-center gap-4 cursor-pointer"
+             onclick="showSection('contacts', document.getElementById('nav-contacts'))">
+          <div class="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center
+                      justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
           </div>
-          <div class="pipeline-grid" id="pipeline-grid">
-            <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted)">Loading pipeline...</div>
+          <div>
+            <p class="text-2xl font-bold text-white" id="dash-total-contacts">—</p>
+            <p class="text-xs text-gray-500 mt-0.5">Contacts ทั้งหมด</p>
           </div>
         </div>
 
-        <!-- Add Deal Form -->
-        <div class="card">
-          <div class="card-header">
-            <h3>เพิ่ม Deal ใหม่</h3>
+        <!-- Leads -->
+        <div class="stat-card bg-navy-800 border border-navy-600 rounded-2xl p-5
+                    flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-cyan-600/20 flex items-center
+                      justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
           </div>
-          <div class="card-body">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Deal Title *</label>
-                <input type="text" id="d-title" placeholder="ชื่อ deal..." />
-              </div>
-              <div class="form-group">
-                <label>มูลค่า (THB)</label>
-                <input type="number" id="d-value" placeholder="0" />
-              </div>
-              <div class="form-group">
-                <label>Stage</label>
-                <select id="d-stage">
-                  <option value="new">New</option>
-                  <option value="contacted">Contacted</option>
-                  <option value="proposal">Proposal</option>
-                  <option value="negotiation">Negotiation</option>
-                  <option value="won">Won</option>
-                  <option value="lost">Lost</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Contact</label>
-                <select id="d-contact"><option value="">— เลือก contact —</option></select>
-              </div>
-              <div class="form-group">
-                <label>Close Date</label>
-                <input type="date" id="d-close-date" />
-              </div>
-            </div>
-            <button class="btn btn-primary" onclick="createDeal()">＋ Add Deal</button>
+          <div>
+            <p class="text-2xl font-bold text-white" id="dash-leads">—</p>
+            <p class="text-xs text-gray-500 mt-0.5">Leads</p>
           </div>
         </div>
 
-        <!-- Deals Table -->
-        <div class="card">
-          <div class="card-header">
-            <h3>รายการ Deals</h3>
+        <!-- Customers -->
+        <div class="stat-card bg-navy-800 border border-navy-600 rounded-2xl p-5
+                    flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-green-600/20 flex items-center
+                      justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Deal</th>
-                  <th>มูลค่า</th>
-                  <th>Stage</th>
-                  <th>Contact</th>
-                  <th>Close Date</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="deals-tbody">
-                <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div></td></tr>
-              </tbody>
-            </table>
+          <div>
+            <p class="text-2xl font-bold text-white" id="dash-customers">—</p>
+            <p class="text-xs text-gray-500 mt-0.5">Customers</p>
+          </div>
+        </div>
+
+        <!-- Deal Value -->
+        <div class="stat-card bg-navy-800 border border-navy-600 rounded-2xl p-5
+                    flex items-center gap-4 cursor-pointer"
+             onclick="showSection('deals', document.getElementById('nav-deals'))">
+          <div class="w-12 h-12 rounded-xl bg-amber-600/20 flex items-center
+                      justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-xl font-bold text-white leading-tight" id="dash-deal-value">—</p>
+            <p class="text-xs text-gray-500 mt-0.5">มูลค่า Deals (active)</p>
           </div>
         </div>
 
       </div>
-      <!-- end panel-deals -->
 
-    </div><!-- end page-content -->
-  </div><!-- end main-wrap -->
+      <!-- Pipeline mini preview -->
+      <div class="bg-navy-800 border border-navy-600 rounded-2xl overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-navy-700 flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-white">Pipeline Overview</h3>
+          <button onclick="showSection('deals', document.getElementById('nav-deals'))"
+            class="text-xs text-blue-400 hover:text-blue-300 transition">ดูทั้งหมด →</button>
+        </div>
+        <div id="dash-pipeline" class="grid grid-cols-3 sm:grid-cols-6 divide-x divide-navy-700">
+          <div class="p-4 text-center">
+            <div class="text-lg font-bold text-white">—</div>
+            <div class="text-xs text-gray-500 mt-0.5">New</div>
+          </div>
+        </div>
+      </div>
 
-  <!-- Toast -->
-  <div id="toast"></div>
+      <!-- Recent contacts -->
+      <div class="bg-navy-800 border border-navy-600 rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-navy-700 flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-white">Contacts ล่าสุด</h3>
+          <button onclick="showSection('contacts', document.getElementById('nav-contacts'))"
+            class="text-xs text-blue-400 hover:text-blue-300 transition">ดูทั้งหมด →</button>
+        </div>
+        <div id="dash-recent-contacts" class="divide-y divide-navy-700">
+          <div class="flex items-center justify-center py-8">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <script src="app.js"></script>
+    <!-- ════════════════════════════════════
+         SECTION: CONTACTS
+    ════════════════════════════════════ -->
+    <section id="section-contacts" class="p-6 hidden">
+
+      <!-- Section header -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="text-lg font-bold text-white">Contacts</h2>
+          <p class="text-sm text-gray-500 mt-0.5">
+            จัดการผู้ติดต่อทั้งหมด
+            <span id="contacts-count-label" class="text-gray-400"></span>
+          </p>
+        </div>
+        <button onclick="toggleAddContactForm()"
+          class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500
+                 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          เพิ่ม Contact
+        </button>
+      </div>
+
+      <!-- Add Contact Form (hidden by default) -->
+      <div id="add-contact-form"
+        class="bg-navy-800 border border-navy-600 rounded-2xl p-5 mb-5 hidden">
+        <h3 class="text-sm font-semibold text-white mb-4">เพิ่ม Contact ใหม่</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              ชื่อ *
+            </label>
+            <input id="c-name" type="text" placeholder="ชื่อ-นามสกุล"
+              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
+                     text-sm text-gray-200 placeholder-gray-600
+                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Email *
+            </label>
+            <input id="c-email" type="email" placeholder="email@example.com"
+              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
+                     text-sm text-gray-200 placeholder-gray-600
+                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Phone
+            </label>
+            <input id="c-phone" type="text" placeholder="08x-xxx-xxxx"
+              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
+                     text-sm text-gray-200 placeholder-gray-600
+                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Company
+            </label>
+            <input id="c-company" type="text" placeholder="บริษัท..."
+              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
+                     text-sm text-gray-200 placeholder-gray-600
+                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Status
+            </label>
+            <select id="c-status"
+              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
+                     text-sm text-gray-200
+                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40">
+              <option value="lead">Lead</option>
+              <option value="prospect">Prospect</option>
+              <option value="customer">Customer</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="createContact()"
+            class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold
+                   px-5 py-2 rounded-lg transition">
+            บันทึก
+          </button>
+          <button onclick="toggleAddContactForm()"
+            class="bg-navy-700 hover:bg-navy-600 text-gray-300 text-sm font-medium
+                   px-4 py-2 rounded-lg transition">
+            ยกเลิก
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="bg-navy-800 border border-navy-600 rounded-2xl overflow-hidden">
+
+        <div class="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-navy-700">
+          <!-- Status dropdown -->
+          <select id="filter-status" onchange="filterContacts()"
+            class="bg-navy-900 border border-navy-600 text-gray-300 text-xs
+                   font-semibold rounded-lg px-3 py-1.5
+                   focus:outline-none focus:border-blue-500">
+            <option value="">All Status</option>
+            <option value="lead">Lead</option>
+            <option value="prospect">Prospect</option>
+            <option value="customer">Customer</option>
+            <option value="inactive">Inactive</option>
+          </select>
+
+          <!-- Search -->
+          <div class="flex items-center gap-2 bg-navy-900 border border-navy-600
+                      rounded-lg px-3 py-1.5 flex-1 min-w-[160px] max-w-xs">
+            <svg class="w-3.5 h-3.5 text-gray-600 flex-shrink-0" fill="none"
+                 stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input id="filter-search" type="text" placeholder="ค้นหาชื่อ, บริษัท, email..."
+              oninput="filterContacts()"
+              class="bg-transparent text-xs text-gray-300 placeholder-gray-600
+                     outline-none w-full" />
+          </div>
+
+          <!-- Count -->
+          <span id="contacts-count"
+            class="ml-auto text-xs text-gray-500 font-medium whitespace-nowrap">
+          </span>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-navy-700">
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500
+                           uppercase tracking-wider">Contact</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500
+                           uppercase tracking-wider">บริษัท</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500
+                           uppercase tracking-wider">อีเมล</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500
+                           uppercase tracking-wider">เบอร์</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500
+                           uppercase tracking-wider">Status</th>
+                <th class="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody id="contacts-tbody">
+              <!-- Loading state -->
+              <tr>
+                <td colspan="6" class="px-5 py-16 text-center">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="spinner"></div>
+                    <span class="text-sm text-gray-600">กำลังโหลด...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         SECTION: DEALS
+    ════════════════════════════════════ -->
+    <section id="section-deals" class="p-6 hidden">
+
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="text-lg font-bold text-white">Deals</h2>
+          <p class="text-sm text-gray-500 mt-0.5">จัดการโอกาสการขาย</p>
+        </div>
+        <button onclick="toggleAddDealForm()"
+          class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500
+                 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          เพิ่ม Deal
+        </button>
+      </div>
+
+      <!-- Pipeline cards -->
+      <div class="bg-navy-800 border border-navy-600 rounded-2xl overflow-hidden mb-5">
+        <div class="px-5 py-4 border-b border-navy-700 flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-white">Pipeline</h3>
+          <span id="pipeline-total" class="text-xs text-blue-400 font-semibold"></span>
+        </div>
+        <div id="pipeline-grid" class="grid grid-cols-3 sm:grid-cols-6 divide-x divide-navy-700">
+          <div class="col-span-3 sm:col-span-6 p-6 text-center">
+            <div class="spinner mx-auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Deal Form -->
+      <div id="add-deal-form"
+        class="bg-navy-800 border border-navy-600 rounded-2xl p-5 mb-5 hidden">
+        <h3 class="text-sm font-semibold text-white mb-4">เพิ่ม Deal ใหม่</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Deal Title *
+            </label>
+            <input id="d-title" type="text" placeholder="ชื่อ deal..."
+              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
+                     text-sm text-gray-200 placeholder-gray-600
+                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              มูลค่า (THB)
+            </label>
+            <input id="d-value" type="number" placeholder="0"
+              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
+                     text-sm text-gray-200 placeholder-gray-600
+                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Stage
+            </label>
+            <select id="d-stage"
+              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
+                     text-sm text-gray-200
+                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40">
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="proposal">Proposal</option>
+              <option value="negotiation">Negotiation</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Contact
+            </label>
+            <select id="d-contact"
+              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
+                     text-sm text-gray-200
+                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40">
+              <option value="">— เลือก Contact —</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Close Date
+            </label>
+            <input id="d-close-date" type="date"
+              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
+                     text-sm text-gray-200
+                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40" />
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="createDeal()"
+            class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold
+                   px-5 py-2 rounded-lg transition">
+            บันทึก
+          </button>
+          <button onclick="toggleAddDealForm()"
+            class="bg-navy-700 hover:bg-navy-600 text-gray-300 text-sm font-medium
+                   px-4 py-2 rounded-lg transition">
+            ยกเลิก
+          </button>
+        </div>
+      </div>
+
+      <!-- Deals Table -->
+      <div class="bg-navy-800 border border-navy-600 rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-navy-700">
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Deal</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">มูลค่า</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stage</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Close Date</th>
+                <th class="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody id="deals-tbody">
+              <tr>
+                <td colspan="6" class="px-5 py-16 text-center">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="spinner"></div>
+                    <span class="text-sm text-gray-600">กำลังโหลด...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main><!-- end main -->
+</div><!-- end main-wrap -->
+
+<!-- ══════════════════════════════════════════════
+     TOAST
+══════════════════════════════════════════════ -->
+<div id="toast"
+  class="fixed bottom-6 right-6 bg-gray-900 border border-gray-700
+         text-white text-sm font-medium px-5 py-3 rounded-xl shadow-2xl
+         opacity-0 pointer-events-none z-50">
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
