@@ -83,6 +83,69 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// ─── GET /api/contacts/export ─────────────────────────────────────────────────
+// Export contacts ทั้งหมด + deal summary เป็น CSV
+// ★ ใส่ BOM (\uFEFF) เพื่อให้ Excel อ่านภาษาไทยได้
+// ⚠️ ต้องอยู่เหนือ /:id
+router.get('/export', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        c.id,
+        c.name,
+        c.company,
+        c.email,
+        c.phone,
+        c.status,
+        c.tags,
+        c.notes,
+        COUNT(d.id)::INTEGER        AS deal_count,
+        COALESCE(SUM(d.value), 0)   AS deal_total,
+        TO_CHAR(c.created_at, 'YYYY-MM-DD') AS created_date
+      FROM contacts c
+      LEFT JOIN deals d ON d.contact_id = c.id
+      GROUP BY c.id
+      ORDER BY c.created_at DESC
+    `);
+
+    // ─── CSV escape helper ──────────────────────────────────────────────────
+    // ครอบด้วย "" ถ้ามี comma / double-quote / newline
+    const csvEscape = v => {
+      if (v === null || v === undefined) return '';
+      const s = String(v);
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    };
+
+    const headers = [
+      'ID', 'ชื่อ', 'บริษัท', 'อีเมล', 'เบอร์โทร',
+      'Status', 'Tags', 'Notes',
+      'จำนวน Deals', 'มูลค่า Deals (THB)', 'วันที่สร้าง',
+    ];
+
+    const rows = result.rows.map(r =>
+      [
+        r.id, r.name, r.company, r.email, r.phone,
+        r.status, r.tags, r.notes,
+        r.deal_count, r.deal_total, r.created_date,
+      ].map(csvEscape).join(',')
+    );
+
+    // BOM + header + rows — ใช้ \r\n ตามมาตรฐาน CSV (RFC 4180)
+    const csv = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="contacts-${today}.csv"`);
+    res.send(csv);
+  } catch (err) {
+    console.error('GET /contacts/export error:', err.message);
+    res.status(500).json({ error: 'Failed to export contacts' });
+  }
+});
+
 // ─── GET /api/contacts/:id ────────────────────────────────────────────────────
 // ดึง contact รายบุคคล พร้อม deals ที่เกี่ยวข้อง
 router.get('/:id', async (req, res) => {

@@ -428,6 +428,13 @@ function clearAllFilters() {
   _applyFilter();
 }
 
+// ─── exportCSV() — ดาวน์โหลด contacts เป็น CSV ──────────────────────────────
+// เรียก GET /api/contacts/export → browser จะ download อัตโนมัติ
+function exportCSV() {
+  window.location.href = `${API}/contacts/export`;
+  showToast('📥 กำลังดาวน์โหลด CSV...');
+}
+
 // ─── highlight() — wrap keyword matches ด้วย <mark> ─────────────────────────
 // ใช้หลังจาก esc() เสมอ เพื่อป้องกัน XSS
 function highlight(text, keyword) {
