@@ -97,8 +97,8 @@ async function seedData() {
         ($1, 'Enterprise CRM Package — ABC Trading',   850000, 'negotiation', '2026-04-30', 'รอ approve จาก CFO'),
         ($2, 'Premium Subscription 12 months',         144000, 'proposal',    '2026-03-31', 'ส่ง proposal ไปแล้ว รอ feedback'),
         ($3, 'Custom API Integration Project',         320000, 'contacted',   '2026-05-15', 'ประชุมครั้งแรกเสร็จแล้ว'),
-        ($7, 'ThanaCorp Multi-site License',          1200000, 'won',         '2026-02-28', 'เซ็นสัญญาแล้ว เริ่ม onboard'),
-        ($9, 'Digital Agency Partner Plan',             96000, 'new',         '2026-06-01', 'ส่ง intro email แล้ว')
+        ($4, 'ThanaCorp Multi-site License',          1200000, 'won',         '2026-02-28', 'เซ็นสัญญาแล้ว เริ่ม onboard'),
+        ($5, 'Digital Agency Partner Plan',             96000, 'new',         '2026-06-01', 'ส่ง intro email แล้ว')
       `,
       // ใช้ parameterized query — ป้องกัน SQL injection
       [ids[0], ids[1], ids[2], ids[6], ids[8]]
