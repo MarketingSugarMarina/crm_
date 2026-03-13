@@ -285,9 +285,9 @@ function _setSubmitLoading(loading) {
     : (modalMode === 'edit' ? 'บันทึกการแก้ไข' : 'บันทึก');
 }
 
-// ปิด modal เมื่อกด Escape
+// ปิด modal เมื่อกด Escape (contact modal)
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') { closeModal(); closeDealModal(); }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -587,134 +587,389 @@ async function loadDashboard() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ██  DEALS
+// ██  DEALS — Kanban Board
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Stage config: key, label, colors
+const STAGES = [
+  { key: 'new',         label: 'New',         dot: '#64748b', colBorder: 'border-slate-500',   colBg: 'bg-slate-500/10',   headerText: 'text-slate-300' },
+  { key: 'contacted',   label: 'Contacted',   dot: '#3b82f6', colBorder: 'border-blue-500',    colBg: 'bg-blue-500/10',    headerText: 'text-blue-300'  },
+  { key: 'proposal',    label: 'Proposal',    dot: '#eab308', colBorder: 'border-yellow-500',  colBg: 'bg-yellow-500/10',  headerText: 'text-yellow-300'},
+  { key: 'negotiation', label: 'Negotiation', dot: '#f97316', colBorder: 'border-orange-500',  colBg: 'bg-orange-500/10',  headerText: 'text-orange-300'},
+  { key: 'won',         label: 'Won ✓',       dot: '#22c55e', colBorder: 'border-green-500',   colBg: 'bg-green-500/10',   headerText: 'text-green-300' },
+  { key: 'lost',        label: 'Lost ✗',      dot: '#ef4444', colBorder: 'border-red-500',     colBg: 'bg-red-500/10',     headerText: 'text-red-300'   },
+];
+
+// ─── loadDeals() — โหลดแล้ว render kanban + summary ─────────────────────────
 async function loadDeals() {
-  document.getElementById('deals-tbody').innerHTML = loadingRow(6);
+  document.getElementById('kanban-board').innerHTML =
+    `<div class="flex items-center gap-3 py-16 text-gray-600">
+       <div class="spinner"></div><span class="text-sm">กำลังโหลด...</span>
+     </div>`;
   try {
     const res   = await fetch(`${API}/deals`);
     const deals = await res.json();
-    renderDeals(deals);
+
+    renderKanban(deals);
+    _updateSummary(deals);
+
+    // sidebar badge
     const badgeEl = document.getElementById('badge-deals');
     badgeEl.textContent = deals.length;
     badgeEl.classList.toggle('hidden', deals.length === 0);
   } catch {
-    document.getElementById('deals-tbody').innerHTML = emptyRow(6, '⚠️', 'โหลดข้อมูลไม่สำเร็จ');
+    document.getElementById('kanban-board').innerHTML =
+      `<div class="py-16 text-gray-600 text-sm">⚠️ โหลดข้อมูลไม่สำเร็จ</div>`;
   }
 }
 
-function renderDeals(deals) {
-  const tbody = document.getElementById('deals-tbody');
-  if (!deals.length) { tbody.innerHTML = emptyRow(6, '💼', 'ยังไม่มี deal'); return; }
-  tbody.innerHTML = deals.map(d => `
-    <tr class="border-b border-navy-700/50 hover:bg-navy-700/30 transition group">
-      <td class="px-5 py-3.5 text-sm font-semibold text-gray-200">${esc(d.title)}</td>
-      <td class="px-4 py-3.5 text-sm font-semibold text-blue-400 whitespace-nowrap">
-        ${formatCurrency(d.value)}
-      </td>
-      <td class="px-4 py-3.5">${badge(d.stage, STAGE_BADGE)}</td>
-      <td class="px-4 py-3.5">
-        ${d.contact_name
-          ? `<div class="text-sm text-gray-300">${esc(d.contact_name)}</div>
-             <div class="text-xs text-gray-600">${esc(d.contact_company||'')}</div>`
-          : `<span class="text-gray-600">—</span>`}
-      </td>
-      <td class="px-4 py-3.5 text-sm text-gray-500 whitespace-nowrap">${formatDate(d.close_date)}</td>
-      <td class="px-4 py-3.5 text-right">
-        <button onclick="deleteDeal(${d.id})"
-          class="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10
-                 transition opacity-0 group-hover:opacity-100" title="ลบ">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-          </svg>
-        </button>
-      </td>
-    </tr>
-  `).join('');
+// ─── _updateSummary() — อัปเดต summary bar ───────────────────────────────────
+function _updateSummary(deals) {
+  const active = deals.filter(d => !['won','lost'].includes(d.stage));
+  const won    = deals.filter(d => d.stage === 'won');
+  const closed = deals.filter(d => ['won','lost'].includes(d.stage));
+
+  const pipelineVal = active.reduce((s, d) => s + parseFloat(d.value||0), 0);
+  const wonCount    = won.length;
+  const winRate     = closed.length ? Math.round(wonCount / closed.length * 100) : 0;
+
+  document.getElementById('summary-pipeline').textContent = formatCurrency(pipelineVal);
+  document.getElementById('summary-won').textContent      = `${wonCount} deals`;
+  document.getElementById('summary-winrate').textContent  = `${winRate}%`;
+
+  // dashboard card
+  const dvEl = document.getElementById('dash-deal-value');
+  if (dvEl) dvEl.textContent = formatCurrency(pipelineVal);
 }
 
-async function loadPipeline() {
-  try {
-    const res  = await fetch(`${API}/deals/pipeline`);
-    const data = await res.json();
-    const stageLabel = { new:'New', contacted:'Contacted', proposal:'Proposal',
-                         negotiation:'Negotiation', won:'Won ✓', lost:'Lost ✗' };
-    document.getElementById('pipeline-grid').innerHTML =
-      (data.stages||[]).map(s => `
-        <div class="p-4 text-center border-r border-navy-700
-          ${s.stage==='won'?'bg-green-900/20':s.stage==='lost'?'bg-red-900/20':''}">
-          <div class="text-2xl font-bold text-white">${s.count}</div>
-          <div class="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wide">
-            ${stageLabel[s.stage]||s.stage}
+// ─── renderKanban() — สร้าง 6 columns ───────────────────────────────────────
+function renderKanban(deals) {
+  const board = document.getElementById('kanban-board');
+
+  // จัดกลุ่ม deals ตาม stage
+  const grouped = {};
+  STAGES.forEach(s => { grouped[s.key] = []; });
+  deals.forEach(d => {
+    if (grouped[d.stage]) grouped[d.stage].push(d);
+  });
+
+  board.innerHTML = STAGES.map(s => {
+    const stagDeals = grouped[s.key];
+    const total     = stagDeals.reduce((sum, d) => sum + parseFloat(d.value||0), 0);
+
+    return `
+      <div class="kanban-col">
+        <!-- Column header -->
+        <div class="bg-navy-800 border ${s.colBorder} border-t-2 rounded-t-xl px-3 py-3
+                    border-b-0 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full flex-shrink-0"
+                  style="background:${s.dot}"></span>
+            <span class="text-xs font-bold ${s.headerText} uppercase tracking-wide">
+              ${s.label}
+            </span>
           </div>
-          <div class="text-xs text-blue-400 font-semibold mt-1">${formatCurrency(s.total_value)}</div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-gray-500">
+              ${formatCurrency(total)}
+            </span>
+            <span class="bg-navy-700 text-gray-400 text-xs font-bold
+                         px-2 py-0.5 rounded-full min-w-[22px] text-center">
+              ${stagDeals.length}
+            </span>
+          </div>
         </div>
-      `).join('');
-    document.getElementById('pipeline-total').textContent =
-      `Active: ${formatCurrency(data.pipeline_value)}`;
-  } catch (err) { console.error('loadPipeline:', err); }
+
+        <!-- Cards -->
+        <div class="kanban-cards bg-navy-900/50 border border-navy-700
+                    border-t-0 rounded-b-xl p-2 space-y-2">
+          ${stagDeals.length
+            ? stagDeals.map(d => _dealCard(d, s)).join('')
+            : `<div class="py-8 text-center text-xs text-gray-700">ไม่มี deal</div>`
+          }
+          <!-- Add shortcut -->
+          <button onclick="openAddDealModal('${s.key}')"
+            class="w-full py-2 text-xs text-gray-700 hover:text-gray-400
+                   hover:bg-navy-800 rounded-lg transition border border-dashed
+                   border-navy-700 hover:border-navy-500">
+            + เพิ่ม deal ใน ${s.label}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
-async function loadContactsDropdown() {
-  try {
-    const res      = await fetch(`${API}/contacts`);
-    const contacts = await res.json();
-    document.querySelectorAll('#d-contact').forEach(sel => {
-      sel.innerHTML = '<option value="">— เลือก Contact —</option>' +
-        contacts.map(c =>
-          `<option value="${c.id}">${esc(c.name)}${c.company?` · ${esc(c.company)}`:''}</option>`
-        ).join('');
-    });
-  } catch (err) { console.error('loadContactsDropdown:', err); }
+// ─── _dealCard() — HTML ของ deal card แต่ละอัน ──────────────────────────────
+function _dealCard(d, stage) {
+  const closeSoon = d.close_date && new Date(d.close_date) < new Date(Date.now() + 7*86400000);
+  const stageOptions = STAGES.map(s =>
+    `<option value="${s.key}" ${s.key === d.stage ? 'selected' : ''}>${s.label}</option>`
+  ).join('');
+
+  return `
+    <div class="deal-card bg-navy-800 border border-navy-700 rounded-xl p-3 group">
+
+      <!-- Title + actions -->
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <div class="text-sm font-semibold text-gray-200 leading-snug flex-1 min-w-0 truncate"
+             title="${esc(d.title)}">
+          ${esc(d.title)}
+        </div>
+        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+          <button onclick="openEditDealModal(${d.id})"
+            class="p-1 rounded text-gray-600 hover:text-blue-400 hover:bg-blue-500/10 transition"
+            title="แก้ไข">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </button>
+          <button onclick="deleteDeal(${d.id})"
+            class="p-1 rounded text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition"
+            title="ลบ">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      ${d.contact_name ? `
+        <div class="flex items-center gap-1.5 mb-2">
+          <div class="w-4 h-4 rounded-full bg-navy-600 text-[9px] font-bold text-white
+                      flex items-center justify-center flex-shrink-0">
+            ${esc(initials(d.contact_name))}
+          </div>
+          <span class="text-xs text-gray-500 truncate">${esc(d.contact_name)}</span>
+        </div>` : ''}
+
+      <!-- Value + Close date -->
+      <div class="flex items-center justify-between mb-2.5">
+        <span class="text-sm font-bold text-blue-400">${formatCurrency(d.value)}</span>
+        ${d.close_date ? `
+          <span class="text-xs ${closeSoon ? 'text-amber-400 font-semibold' : 'text-gray-600'}">
+            ${closeSoon ? '⚠️ ' : ''}${formatDate(d.close_date)}
+          </span>` : ''}
+      </div>
+
+      <!-- Inline Stage select -->
+      <select onchange="updateDealStage(${d.id}, this.value)"
+        class="stage-select w-full bg-navy-900 border border-navy-700 rounded-lg
+               px-2.5 py-1.5 text-xs text-gray-400 cursor-pointer
+               focus:outline-none focus:border-blue-500 transition">
+        ${stageOptions}
+      </select>
+    </div>
+  `;
 }
 
-async function createDeal() {
-  const title      = document.getElementById('d-title').value.trim();
-  const value      = document.getElementById('d-value').value;
-  const stage      = document.getElementById('d-stage').value;
-  const contact_id = document.getElementById('d-contact').value || null;
-  const close_date = document.getElementById('d-close-date').value || null;
-
-  if (!title) { showToast('⚠️ กรุณากรอกชื่อ Deal'); return; }
-
+// ─── updateDealStage() — เปลี่ยน stage จาก card โดยตรง ──────────────────────
+async function updateDealStage(id, newStage) {
   try {
-    const res = await fetch(`${API}/deals`, {
-      method: 'POST',
+    // ดึงข้อมูล deal เดิมก่อน แล้ว PUT กลับพร้อม stage ใหม่
+    const getRes = await fetch(`${API}/deals/${id}`);
+    if (!getRes.ok) throw new Error();
+    const deal = await getRes.json();
+
+    const res = await fetch(`${API}/deals/${id}`, {
+      method:  'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, value: Number(value)||0, stage, contact_id, close_date }),
+      body:    JSON.stringify({
+        title:      deal.title,
+        value:      deal.value,
+        stage:      newStage,
+        contact_id: deal.contact_id,
+        close_date: deal.close_date,
+        notes:      deal.notes,
+      }),
+    });
+    if (!res.ok) throw new Error();
+
+    showToast(`🔄 ย้ายไป ${newStage}`);
+    loadDeals();
+    loadDashboard();
+  } catch {
+    showToast('❌ เปลี่ยน stage ไม่สำเร็จ');
+    loadDeals(); // revert UI
+  }
+}
+
+// ─── Deal Modal — state ───────────────────────────────────────────────────────
+let dealModalMode = 'add';
+let dealModalId   = null;
+
+// ─── openAddDealModal() — เปิด modal ว่าง (stage optional) ──────────────────
+async function openAddDealModal(defaultStage = 'new') {
+  dealModalMode = 'add';
+  dealModalId   = null;
+
+  document.getElementById('deal-modal-title').textContent  = 'New Deal';
+  document.getElementById('deal-btn-text').textContent     = 'บันทึก';
+  _resetDealFields();
+  document.getElementById('dm-stage').value = defaultStage;
+
+  await _loadDealContactDropdown();
+  _openDealModal();
+}
+
+// ─── openEditDealModal() — โหลดข้อมูล + เปิด modal ────────────────────────
+async function openEditDealModal(id) {
+  dealModalMode = 'edit';
+  dealModalId   = id;
+
+  document.getElementById('deal-modal-title').textContent = 'แก้ไข Deal';
+  document.getElementById('deal-btn-text').textContent    = 'บันทึกการแก้ไข';
+  _resetDealFields();
+
+  await _loadDealContactDropdown();
+  _openDealModal();
+  _setDealLoading(true);
+
+  try {
+    const res  = await fetch(`${API}/deals/${id}`);
+    if (!res.ok) throw new Error();
+    const d    = await res.json();
+
+    document.getElementById('dm-title').value      = d.title      || '';
+    document.getElementById('dm-contact').value    = d.contact_id || '';
+    document.getElementById('dm-value').value      = d.value      || '';
+    document.getElementById('dm-stage').value      = d.stage      || 'new';
+    document.getElementById('dm-close-date').value = d.close_date
+      ? d.close_date.split('T')[0] : '';
+    document.getElementById('dm-notes').value      = d.notes      || '';
+  } catch {
+    showToast('❌ โหลดข้อมูลไม่สำเร็จ');
+    closeDealModal();
+  } finally {
+    _setDealLoading(false);
+  }
+}
+
+// ─── saveDeal() — POST หรือ PUT ───────────────────────────────────────────────
+async function saveDeal() {
+  const title      = document.getElementById('dm-title').value.trim();
+  const contact_id = document.getElementById('dm-contact').value || null;
+
+  // Validate
+  _clearDealErrors();
+  let valid = true;
+  if (!title) {
+    _showDealError('dm-title', 'dm-err-title', 'กรุณากรอกชื่อ Deal');
+    valid = false;
+  }
+  if (!contact_id) {
+    _showDealError('dm-contact', 'dm-err-contact', 'กรุณาเลือก Contact');
+    valid = false;
+  }
+  if (!valid) return;
+
+  const payload = {
+    title,
+    contact_id,
+    value:      Number(document.getElementById('dm-value').value)      || 0,
+    stage:      document.getElementById('dm-stage').value,
+    close_date: document.getElementById('dm-close-date').value         || null,
+    notes:      document.getElementById('dm-notes').value.trim()       || null,
+  };
+
+  _setDealLoading(true);
+  try {
+    const url    = dealModalMode === 'edit' ? `${API}/deals/${dealModalId}` : `${API}/deals`;
+    const method = dealModalMode === 'edit' ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
     });
     if (!res.ok) { const e = await res.json(); showToast(`❌ ${e.error}`); return; }
 
-    document.getElementById('d-title').value      = '';
-    document.getElementById('d-value').value      = '';
-    document.getElementById('d-close-date').value = '';
-    document.getElementById('add-deal-form').classList.add('hidden');
-    showToast('✅ เพิ่ม Deal สำเร็จ!');
+    showToast(dealModalMode === 'edit' ? '✅ แก้ไข Deal สำเร็จ!' : '✅ เพิ่ม Deal สำเร็จ!');
+    closeDealModal();
     loadDeals();
-    loadPipeline();
     loadDashboard();
-  } catch { showToast('❌ เกิดข้อผิดพลาด'); }
+  } catch {
+    showToast('❌ เกิดข้อผิดพลาด กรุณาลองใหม่');
+  } finally {
+    _setDealLoading(false);
+  }
 }
 
+// ─── deleteDeal() ─────────────────────────────────────────────────────────────
 async function deleteDeal(id) {
   if (!confirm('ลบ Deal นี้?')) return;
   try {
     await fetch(`${API}/deals/${id}`, { method: 'DELETE' });
     showToast('🗑️ ลบ Deal แล้ว');
-    loadDeals(); loadPipeline(); loadDashboard();
+    loadDeals();
+    loadDashboard();
   } catch { showToast('❌ ลบไม่สำเร็จ'); }
 }
 
-function toggleAddDealForm() {
-  const el = document.getElementById('add-deal-form');
-  el.classList.toggle('hidden');
-  if (!el.classList.contains('hidden')) {
-    loadContactsDropdown();
-    document.getElementById('d-title').focus();
-  }
+// ─── Deal Modal Helpers ───────────────────────────────────────────────────────
+
+function closeDealModal() {
+  document.getElementById('deal-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+  _clearDealErrors();
 }
+
+function _openDealModal() {
+  document.getElementById('deal-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('dm-title').focus(), 50);
+}
+
+function _resetDealFields() {
+  ['dm-title','dm-value','dm-notes','dm-close-date'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('dm-stage').value   = 'new';
+  document.getElementById('dm-contact').value = '';
+  _clearDealErrors();
+}
+
+function _clearDealErrors() {
+  ['dm-err-title','dm-err-contact'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = ''; el.classList.add('hidden');
+  });
+  ['dm-title','dm-contact'].forEach(id =>
+    document.getElementById(id).classList.remove('input-error')
+  );
+}
+
+function _showDealError(inputId, errId, msg) {
+  document.getElementById(inputId).classList.add('input-error');
+  const el = document.getElementById(errId);
+  el.textContent = msg; el.classList.remove('hidden');
+}
+
+function _setDealLoading(loading) {
+  const btn  = document.getElementById('deal-submit-btn');
+  const spin = document.getElementById('deal-btn-spinner');
+  const text = document.getElementById('deal-btn-text');
+  btn.disabled = loading;
+  spin.classList.toggle('hidden', !loading);
+  text.textContent = loading ? 'กำลังบันทึก...'
+    : (dealModalMode === 'edit' ? 'บันทึกการแก้ไข' : 'บันทึก');
+}
+
+async function _loadDealContactDropdown() {
+  try {
+    const res      = await fetch(`${API}/contacts`);
+    const contacts = await res.json();
+    const sel      = document.getElementById('dm-contact');
+    sel.innerHTML  = '<option value="">— เลือก Contact —</option>' +
+      contacts.map(c =>
+        `<option value="${c.id}">${esc(c.name)}${c.company ? ` · ${esc(c.company)}` : ''}</option>`
+      ).join('');
+  } catch { console.error('_loadDealContactDropdown'); }
+}
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // REFRESH ALL
@@ -724,6 +979,9 @@ async function refreshAll() {
   await Promise.all([loadDashboard(), loadContacts(), loadDeals()]);
   showToast('🔄 รีเฟรชข้อมูลแล้ว');
 }
+
+// compat stub — deals section เดิมเรียก loadPipeline ผ่าน showSection
+function loadPipeline() { loadDeals(); }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INIT

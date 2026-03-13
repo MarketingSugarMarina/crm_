@@ -94,6 +94,54 @@
       border-color: #3b82f6;
       box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
     }
+
+    /* Kanban board */
+    #kanban-board {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+      align-items: flex-start;
+    }
+    #kanban-board::-webkit-scrollbar { height: 6px; }
+    .kanban-col {
+      min-width: 256px;
+      width: 256px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 280px);
+    }
+    .kanban-cards {
+      overflow-y: auto;
+      flex: 1;
+    }
+    .kanban-cards::-webkit-scrollbar { width: 4px; }
+
+    /* Deal card hover */
+    .deal-card { transition: transform 0.12s, box-shadow 0.12s; }
+    .deal-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+
+    /* Stage select on card */
+    .stage-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 6px center;
+      padding-right: 20px !important;
+    }
+
+    /* Modal deal animation (reuse contact modal style) */
+    #deal-modal .relative {
+      transition: opacity 0.2s, transform 0.2s;
+      opacity: 0;
+      transform: scale(0.96) translateY(8px);
+    }
+    #deal-modal:not(.hidden) .relative {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
   </style>
 </head>
 
@@ -468,139 +516,82 @@
     </section>
 
     <!-- ════════════════════════════════════
-         SECTION: DEALS
+         SECTION: DEALS — Kanban Board
     ════════════════════════════════════ -->
     <section id="section-deals" class="p-6 hidden">
 
-      <div class="flex items-center justify-between mb-6">
+      <!-- Section header -->
+      <div class="flex items-center justify-between mb-5">
         <div>
           <h2 class="text-lg font-bold text-white">Deals</h2>
-          <p class="text-sm text-gray-500 mt-0.5">จัดการโอกาสการขาย</p>
+          <p class="text-sm text-gray-500 mt-0.5">Sales Pipeline — Kanban View</p>
         </div>
-        <button onclick="toggleAddDealForm()"
+        <button onclick="openAddDealModal()"
           class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500
                  text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
-          เพิ่ม Deal
+          New Deal
         </button>
       </div>
 
-      <!-- Pipeline cards -->
-      <div class="bg-navy-800 border border-navy-600 rounded-2xl overflow-hidden mb-5">
-        <div class="px-5 py-4 border-b border-navy-700 flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-white">Pipeline</h3>
-          <span id="pipeline-total" class="text-xs text-blue-400 font-semibold"></span>
+      <!-- Summary Bar -->
+      <div id="deals-summary"
+        class="grid grid-cols-3 gap-4 mb-5">
+
+        <!-- Total pipeline value -->
+        <div class="bg-navy-800 border border-navy-600 rounded-xl px-5 py-4 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 font-medium">มูลค่า Pipeline</div>
+            <div id="summary-pipeline" class="text-base font-bold text-white mt-0.5">—</div>
+          </div>
         </div>
-        <div id="pipeline-grid" class="grid grid-cols-3 sm:grid-cols-6 divide-x divide-navy-700">
-          <div class="col-span-3 sm:col-span-6 p-6 text-center">
-            <div class="spinner mx-auto"></div>
+
+        <!-- Won deals -->
+        <div class="bg-navy-800 border border-navy-600 rounded-xl px-5 py-4 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-green-600/20 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 font-medium">Won Deals</div>
+            <div id="summary-won" class="text-base font-bold text-white mt-0.5">—</div>
+          </div>
+        </div>
+
+        <!-- Win rate -->
+        <div class="bg-navy-800 border border-navy-600 rounded-xl px-5 py-4 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-amber-600/20 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 font-medium">Win Rate</div>
+            <div id="summary-winrate" class="text-base font-bold text-white mt-0.5">—</div>
           </div>
         </div>
       </div>
 
-      <!-- Add Deal Form -->
-      <div id="add-deal-form"
-        class="bg-navy-800 border border-navy-600 rounded-2xl p-5 mb-5 hidden">
-        <h3 class="text-sm font-semibold text-white mb-4">เพิ่ม Deal ใหม่</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Deal Title *
-            </label>
-            <input id="d-title" type="text" placeholder="ชื่อ deal..."
-              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
-                     text-sm text-gray-200 placeholder-gray-600
-                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              มูลค่า (THB)
-            </label>
-            <input id="d-value" type="number" placeholder="0"
-              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
-                     text-sm text-gray-200 placeholder-gray-600
-                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Stage
-            </label>
-            <select id="d-stage"
-              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
-                     text-sm text-gray-200
-                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40">
-              <option value="new">New</option>
-              <option value="contacted">Contacted</option>
-              <option value="proposal">Proposal</option>
-              <option value="negotiation">Negotiation</option>
-              <option value="won">Won</option>
-              <option value="lost">Lost</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Contact
-            </label>
-            <select id="d-contact"
-              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
-                     text-sm text-gray-200
-                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40">
-              <option value="">— เลือก Contact —</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Close Date
-            </label>
-            <input id="d-close-date" type="date"
-              class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2
-                     text-sm text-gray-200
-                     focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40" />
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <button onclick="createDeal()"
-            class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold
-                   px-5 py-2 rounded-lg transition">
-            บันทึก
-          </button>
-          <button onclick="toggleAddDealForm()"
-            class="bg-navy-700 hover:bg-navy-600 text-gray-300 text-sm font-medium
-                   px-4 py-2 rounded-lg transition">
-            ยกเลิก
-          </button>
+      <!-- Kanban Board -->
+      <div id="kanban-board">
+        <!-- columns rendered by JS -->
+        <div class="flex items-center gap-3 py-16 text-gray-600">
+          <div class="spinner"></div>
+          <span class="text-sm">กำลังโหลด...</span>
         </div>
       </div>
 
-      <!-- Deals Table -->
-      <div class="bg-navy-800 border border-navy-600 rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-navy-700">
-                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Deal</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">มูลค่า</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stage</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Close Date</th>
-                <th class="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody id="deals-tbody">
-              <tr>
-                <td colspan="6" class="px-5 py-16 text-center">
-                  <div class="flex flex-col items-center gap-3">
-                    <div class="spinner"></div>
-                    <span class="text-sm text-gray-600">กำลังโหลด...</span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
     </section>
 
   </main><!-- end main -->
@@ -761,6 +752,134 @@
       </button>
     </div>
 
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     DEAL MODAL
+══════════════════════════════════════════════ -->
+<div id="deal-modal"
+  class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+
+  <div onclick="closeDealModal()"
+    class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+
+  <div class="relative bg-navy-800 border border-navy-600 rounded-2xl shadow-2xl
+              w-full max-w-lg max-h-[90vh] overflow-y-auto z-10">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-navy-700">
+      <h2 id="deal-modal-title" class="text-base font-bold text-white">New Deal</h2>
+      <button onclick="closeDealModal()"
+        class="text-gray-500 hover:text-white p-1 rounded-lg hover:bg-navy-700 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="px-6 py-5 space-y-4">
+
+      <!-- Deal Title * -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+          ชื่อ Deal <span class="text-red-400">*</span>
+        </label>
+        <input id="dm-title" type="text" placeholder="ชื่อ deal..."
+          class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5
+                 text-sm text-gray-200 placeholder-gray-600
+                 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 transition" />
+        <p id="dm-err-title" class="mt-1 text-xs text-red-400 hidden"></p>
+      </div>
+
+      <!-- Contact * -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+          Contact <span class="text-red-400">*</span>
+        </label>
+        <select id="dm-contact"
+          class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5
+                 text-sm text-gray-200
+                 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 transition">
+          <option value="">— เลือก Contact —</option>
+        </select>
+        <p id="dm-err-contact" class="mt-1 text-xs text-red-400 hidden"></p>
+      </div>
+
+      <!-- Value + Stage (2 col) -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+            มูลค่า (THB)
+          </label>
+          <input id="dm-value" type="number" placeholder="0" min="0"
+            class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5
+                   text-sm text-gray-200 placeholder-gray-600
+                   focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+            Stage
+          </label>
+          <select id="dm-stage"
+            class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5
+                   text-sm text-gray-200
+                   focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 transition">
+            <option value="new">🔵 New</option>
+            <option value="contacted">🔷 Contacted</option>
+            <option value="proposal">🟡 Proposal</option>
+            <option value="negotiation">🟠 Negotiation</option>
+            <option value="won">🟢 Won</option>
+            <option value="lost">🔴 Lost</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Close Date -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+          วันปิด Deal
+        </label>
+        <input id="dm-close-date" type="date"
+          class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5
+                 text-sm text-gray-200
+                 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 transition" />
+      </div>
+
+      <!-- Notes -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+          Notes
+        </label>
+        <textarea id="dm-notes" rows="3" placeholder="รายละเอียดเพิ่มเติม..."
+          class="w-full bg-navy-900 border border-navy-600 rounded-lg px-3 py-2.5
+                 text-sm text-gray-200 placeholder-gray-600 resize-none
+                 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 transition">
+        </textarea>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-navy-700">
+      <button onclick="closeDealModal()"
+        class="bg-navy-700 hover:bg-navy-600 text-gray-300 text-sm font-medium
+               px-4 py-2 rounded-lg transition">
+        ยกเลิก
+      </button>
+      <button id="deal-submit-btn" onclick="saveDeal()"
+        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500
+               disabled:opacity-50 disabled:cursor-not-allowed
+               text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+        <span id="deal-btn-spinner" class="hidden">
+          <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+        </span>
+        <span id="deal-btn-text">บันทึก</span>
+      </button>
+    </div>
   </div>
 </div>
 
